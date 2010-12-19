@@ -196,6 +196,10 @@ abstract class BaseButton extends \Nette\Application\PresenterComponent
 		if ($token !== $this->getGrid()->getSecurityToken()) {
 			throw new \Nette\Application\ForbiddenRequestException("Security token does not match. Possible CSRF attack.");
 		}
+		
+		if(!$this->handler){
+			throw new \InvalidStateException("Hendler not found.");
+		}
 
 		if ($uniqueId === null) {
 			call_user_func($this->handler);
