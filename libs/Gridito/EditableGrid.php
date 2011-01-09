@@ -15,9 +15,7 @@ class EditableGrid extends Grid{
 	
 	/** @var EditableModel */
 	private $editableModel;
-	
-	private $formFactory;
-	
+		
 	private $formFilter = array(__CLASS__, '_bracket');
 
 	private $defaultValueFilter = array(__CLASS__, '_bracket');
@@ -32,10 +30,13 @@ class EditableGrid extends Grid{
 		return $v;
 	}
 	
-	private function formFactory($f){
-		//dump($this->formFactory);
-		call_user_func($this->formFactory, $f);
+	public function __construct(\Nette\IComponentContainer $parent = null, $name = null){
+		parent::__construct($parent, $name);
+		
+		Column::extensionMethod("setEditable", callback($this, "setEditable"));
+		
 	}
+
 	
 	public function setSavedMessage($msg){
 		$this->insertedMessage = $msg;
@@ -58,9 +59,8 @@ class EditableGrid extends Grid{
 		return $this;
 	}
 	
-	public function setEditableModel(IEditableModel $model, $formFactory){ // TODO: add default Form factory
+	public function setEditableModel(IEditableModel $model){
 		$this->editableModel = $model;
-		$this->formFactory = $formFactory;
 		return parent::setModel($model);
 	}
 	
@@ -152,4 +152,16 @@ class EditableGrid extends Grid{
 		$f->onSubmit[] = $this->createSubmitHandler(false, $this->updatedMessage);
 	}
 	
+	
+	/** extending methods */
+	
+	public function setEditable(Column $column, $controlClass = true){
+		if($controlClass === true){
+			return new \Nette\Forms\TextInput($column->getName(), $column->getLabel());
+		}elseif(\class_exists($controlClass)){
+			return new $controlClass($column->getName(), $column->getLabel());
+		}
+		throw new \InvalidArgumentException("No valid editable control");
+	}
+
 }
