@@ -69,11 +69,17 @@ class EditableGrid extends Grid{
 		return parent::setModel($model);
 	}
 	
-	public function addAddButton($label, $jQueryClass){
+	public function addAddButton($name, $label = null, array $options = array()){
+		if(isset($options["handler"])){
+			throw new \InvalidArgumentException(__CLASS__.":".__METHOD__." \$options['handler'] is reserved.");
+		}
+		
 		$grid = $this;
-		return $this->addToolbarWindowButton($label, function () use ($grid) {
+		$options["handler"] = function () use ($grid) {
 			$grid["addForm"]->render();
-		}, $jQueryClass);
+		};
+		
+		return $this->addToolbarWindowButton($name, $label, $options);	
 	}
 
 	public function addEditButton($label, $jQueryClass){
