@@ -307,6 +307,10 @@ class Grid extends \Nette\Application\Control
 		$this->setOptions($column, $options);
 		return $column;
 	}
+	
+	public function getColumn($name){
+		return $this["columns"]->getComponent($name);
+	}
 
 
 
