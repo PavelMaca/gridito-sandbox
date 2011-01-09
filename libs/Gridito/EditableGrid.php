@@ -98,14 +98,20 @@ class EditableGrid extends Grid{
 		return $this->addWindowButton($name, $label, $options);
 	}
 	
-	public function addRemoveButton($label, $jQueryClass){
+	public function addRemoveButton($name, $label = null, array $options = array()){
+		if(isset($options["handler"])){
+			throw new \InvalidArgumentException(__CLASS__.":".__METHOD__." \$options['handler'] is reserved.");
+		}
+		
 		$grid = $this;
 		$model = $this->editableModel;
 		$removedMessage = $this->removedMessage;
-		return $this->addButton($label, function ($id) use ($grid, $model, $removedMessage) {
+		$options["handler"] = function ($id) use ($grid, $model, $removedMessage) {
 			unset($model[$id]);
 			$grid->flashMessage($removedMessage);
-		}, $jQueryClass);
+		};
+		
+		return $this->addButton($name, $label, $options);
 	}
 
 	private function createBaseForm($name){
