@@ -91,7 +91,7 @@ class EditableGrid extends Grid{
 		$model = $this->editableModel;
 		$filter = $this->defaultValueFilter;
 		$options["handler"] = function ($id) use ($grid, $model, $filter) {
-			$grid["editForm"]->setDefaults(call_user_func($filter, $model[$id]));
+			$grid["editForm"]->setDefaults(call_user_func($filter, $model->findRow($id)));
 			$grid["editForm"]->render();
 		};
 		
@@ -107,7 +107,7 @@ class EditableGrid extends Grid{
 		$model = $this->editableModel;
 		$removedMessage = $this->removedMessage;
 		$options["handler"] = function ($id) use ($grid, $model, $removedMessage) {
-			unset($model[$id]);
+			$model->removeRow($id);
 			$grid->flashMessage($removedMessage);
 		};
 		
@@ -126,8 +126,14 @@ class EditableGrid extends Grid{
 		$filter = $grid->formFilter;
 		return function ($form) use ($grid, $model, $okMsg, $insert, $filter) {
 			$vals = $form->values;
-			$id = $insert ?null :$vals[$grid->getPrimaryKey()];
-			$model[$id] = call_user_func($filter, $form->values, $form);
+			
+			$rawData = call_user_func($filter, $form->values, $form);
+			if($insert === true ){
+				$model->addRow($rawData);
+			}else {
+				$model->updateRow($vals[$grid->getPrimaryKey()], $rawData);
+			}
+			
 			$grid->flashMessage($okMsg);
 			$grid->redirect("this");
 		};
