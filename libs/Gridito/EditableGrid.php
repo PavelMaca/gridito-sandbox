@@ -82,14 +82,20 @@ class EditableGrid extends Grid{
 		return $this->addToolbarWindowButton($name, $label, $options);	
 	}
 
-	public function addEditButton($label, $jQueryClass){
+	public function addEditButton($name, $label = null, array $options = array()){
+		if(isset($options["handler"])){
+			throw new \InvalidArgumentException(__CLASS__.":".__METHOD__." \$options['handler'] is reserved.");
+		}
+		
 		$grid = $this;
 		$model = $this->editableModel;
 		$filter = $this->defaultValueFilter;
-		return $this->addWindowButton($label, function ($id) use ($grid, $model, $filter) {
+		$options["handler"] = function ($id) use ($grid, $model, $filter) {
 			$grid["editForm"]->setDefaults(call_user_func($filter, $model[$id]));
 			$grid["editForm"]->render();
-		}, $jQueryClass);
+		};
+		
+		return $this->addWindowButton($name, $label, $options);
 	}
 	
 	public function addRemoveButton($label, $jQueryClass){
