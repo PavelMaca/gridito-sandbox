@@ -1,4 +1,6 @@
+
 libs/Nette
+libs/client-side
 libs/dibi
 libs/Doctrine
 nbproject
