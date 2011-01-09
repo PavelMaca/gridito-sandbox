@@ -15,6 +15,8 @@ class EditableGrid extends Grid{
 	
 	/** @var EditableModel */
 	private $editableModel;
+	
+	private $editForm;
 		
 	private $formFilter = array(__CLASS__, '_bracket');
 
@@ -34,7 +36,7 @@ class EditableGrid extends Grid{
 		parent::__construct($parent, $name);
 		
 		Column::extensionMethod("setEditable", callback($this, "setEditable"));
-		
+		$this->editForm = new AppForm($this, "editForm");
 	}
 
 	
@@ -76,7 +78,7 @@ class EditableGrid extends Grid{
 		
 		$grid = $this;
 		$options["handler"] = function () use ($grid) {
-			$grid["addForm"]->render();
+			$grid["editForm"]->render();
 		};
 		
 		return $this->addToolbarWindowButton($name, $label, $options);	
@@ -140,9 +142,8 @@ class EditableGrid extends Grid{
 	}
 	
 	protected function createComponentAddForm($name){
-		$f = $this->createBaseForm($name);
-		$this->formFactory($f);
-		$f->onSubmit[] = $this->createSubmitHandler(true, $this->insertedMessage);
+		$this->getEditForm()
+			->onSubmit[] = $this->createSubmitHandler(true, $this->insertedMessage);
 	}
 
 	protected function createComponentEditForm($name){
@@ -152,14 +153,21 @@ class EditableGrid extends Grid{
 		$f->onSubmit[] = $this->createSubmitHandler(false, $this->updatedMessage);
 	}
 	
+	/**
+	 * @return AppForm 
+	 */
+	public function getEditForm(){
+		return $this->editForm;
+	}
+	
 	
 	/** extending methods */
 	
-	public function setEditable(Column $column, $controlClass = true){
-		if($controlClass === true){
-			return new \Nette\Forms\TextInput($column->getName(), $column->getLabel());
-		}elseif(\class_exists($controlClass)){
-			return new $controlClass($column->getName(), $column->getLabel());
+	public function setEditable(Column $column, $controlClass = "Nette\Forms\TextInput"){
+		if(\class_exists($controlClass)){
+			$control = new $controlClass($column->getName(), $column->getLabel());
+			$this->getEditForm()->addComponent($control, $column->getName());
+			return $this->getEditForm()->getComponent($column->getName());
 		}
 		throw new \InvalidArgumentException("No valid editable control");
 	}
