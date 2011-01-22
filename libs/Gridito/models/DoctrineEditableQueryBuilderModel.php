@@ -123,6 +123,9 @@ class DoctrineEditableQueryBuilderModel extends DoctrineQueryBuilderModel implem
 	 */
 	public function updateRow($id, $rawValues) {
 		$entity = $this->entityFind($id);
+		if(!$entity){
+			throw new \InvalidStateException("Can not find row with id:'$id'");
+		}
 		
 		$this->qb->getEntityManager()->persist($entity);
 
