@@ -55,6 +55,13 @@ $.widget("ui.gridito", {
 							modal: true
 						});
 						win.find("input:first").focus();
+						
+						win.find('form').each(function(){
+							Nette.initForm(this);
+						});
+						win.closest('form').each(function(){
+							Nette.initForm(this);
+						});
 					});
 				});
 			}
