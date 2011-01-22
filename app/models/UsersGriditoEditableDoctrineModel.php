@@ -8,9 +8,10 @@ use Doctrine\ORM\EntityManager;
  * Users Gridito Doctrine model
  *
  * @author Jan Marek
+ * @author Pavel Máca
  * @license MIT
  */
-class UsersGriditoDoctrineModel extends \Gridito\DoctrineEditableQueryBuilderModel
+class UsersEditableGriditoDoctrineModel extends \Gridito\DoctrineEditableQueryBuilderModel
 {
 	public function __construct(EntityManager $em)
 	{
