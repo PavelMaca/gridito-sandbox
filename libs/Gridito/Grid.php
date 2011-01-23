@@ -15,7 +15,7 @@ class Grid extends \Nette\Application\Control
 	// <editor-fold defaultstate="collapsed" desc="variables">
 
 	/** @var IModel */
-	private $model;
+	protected $model;
 
 	/** @var Paginator */
 	private $paginator;
@@ -397,7 +397,7 @@ class Grid extends \Nette\Application\Control
 	{
 		foreach	($options as $option => $value) {
 			$method = "set" . ucfirst($option);
-			if (method_exists($object, $method)) {
+			if (is_callable(array($object, $method))) {
 				$object->$method($value);
 			} else {
 				throw new \InvalidArgumentException("Option with name $option does not exist.");
