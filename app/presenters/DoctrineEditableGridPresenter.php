@@ -24,48 +24,63 @@ class DoctrineEditableGridPresenter extends BasePresenter {
 
 		$grid->addColumn("username", "Username")
 			->setSortable(true)
-			->setEditable();
+			->setEditableText();
+		
+		$grid->getColumn("username")
+			->setAddable();
+		
 
 		$grid->addColumn("name", "Name")
 			->setSortable(true)
-			->setEditable();
+			->setEditableText();
+		
+		$grid->getColumn("name")
+			->setAddableText();
 
+		
 		$grid->addColumn("surname", "Surname")
 			->setSortable(true)
-			->setEditable();
-
+			->setEditableText();
+		
+		$grid->getColumn("surname")
+			->setAddable();
+		
+			
 		$grid->addColumn("mail", "E-mail", array(
 			"sortable" => true,
 			"renderer" => function ($row) {
 				echo Nette\Web\Html::el("a")->href("mailto:$row->mail")->setText($row->mail);
 			},
 			"editable" => true,
+			"addable" => true,
 		));
 
 			
 		$grid->getColumn("mail")
 			->getEditable()
-			->addRule(Form::EMAIL, "E-mail is not valid.");
+				->addRule(Form::EMAIL, "E-mail is not valid.");
+		
+		$grid->getColumn("mail")
+			->getAddable()
+				->addRule(Form::EMAIL, "E-mail is not valid.");
 
-
+		
 		$grid->addColumn("active", "Active")
 			->setSortable(true)
-			->setEditable('Nette\Forms\Checkbox');
-
-		$grid->getEditableForm()
-			->addSubmit("save", "Uložit");
-
+			->setEditableCheckbox();
+			
+		$grid->getColumn("active")
+			->setAddableCheckbox();
+		
+		
+		
 		// toolbar buttons
 		
 		$grid->addAddButton("create", "Create new user", array(
 			"icon" => "ui-icon-plusthick",
 		));
 
-		$grid->addToolbarButton("back", "Go back to examples", array(
-			"link" => $this->link("Homepage:"),
-			"icon" => "ui-icon-home",
-		));
-
+	
 		// action buttons
 		$grid->addRemoveButton("delete", "Delete", array(
 			"icon" => "ui-icon-closethick",
@@ -77,7 +92,7 @@ class DoctrineEditableGridPresenter extends BasePresenter {
 				}
 			},
 			"visible" => function ($user) {
-				return!$user->isActive();
+				return !$user->isActive();
 			},
 		));
 
@@ -85,18 +100,47 @@ class DoctrineEditableGridPresenter extends BasePresenter {
 			"icon" => "ui-icon-pencil",
 			"editedMessage" => "Uloženo.",
 		));
+		
+		
+		//buttons for editabel forms
+		
+		$grid->getEditableForm()
+			->addSubmit("save", "Uložit");
+		
+		
+		$grid->getAddableForm()
+			->addPassword("password", "Heslo")
+				->getParent()
+			->addSubmit("add", "Přidat");
+			;
+		
+			
+		// messages
+		$grid->setInsertedMessage("Succes.");
+		$grid->setRemovedMessage("Row was removed.");
 
 
+		// handlers
+		
 		$grid->getModel()->setEntityUpdateHandler(function($entity, $values) use ($grid) {
-				foreach ($values as $key => $val) {
-					$method = "set" . ucfirst($key);
-					if (method_exists($entity, $method)) {
-						$entity->$method($val);
-					} else {
-						throw new \InvalidArgumentException("Entity has not method '$method'");
-					}
+			$class = $grid->getModel()->getEntityManager()->getClassMetadata(get_class($entity));
+				foreach ($values as $property_name => $val) {
+					//TODO: test for oneToMany
+					$prop = $class->reflFields[$property_name];
+					$prop->setValue($entity, $val);
 				}
 			});
+			
+		$grid->getModel()->setEntityInsertHandler(function($values) use ($grid) {
+			$entity = new Model\User;
+			$class = $grid->getModel()->getEntityManager()->getClassMetadata(get_class($entity));
+				foreach ($values as $property_name => $val) {
+					//TODO: test for oneToMany
+					$prop = $class->reflFields[$property_name];
+					$prop->setValue($entity, $val);
+				}
+			return $entity;
+		});
 	}
 
 }
