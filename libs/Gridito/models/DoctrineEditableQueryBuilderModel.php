@@ -11,38 +11,38 @@ namespace Gridito;
 class DoctrineEditableQueryBuilderModel extends DoctrineQueryBuilderModel implements IEditableModel
 {
 	/** @var callback */
-	private $entityFactory;
+	protected $entityInsertHandler;
 	
 	/** @var callback */
-	private $entityUpdateHandler;
+	protected $entityUpdateHandler;
 
 	/**
-	 * @param callback $entityFactory 
+	 * @param callback $entityInsertHandler 
 	 */
-	public function setEntityFactory($entityFactory) {
-		if (!is_callable($entityFactory)) {
-			throw new \InvalidArgumentException("EntityFactory is not callable.");
+	public function setEntityInsertHandler($entityInsertHandler) {
+		if (!is_callable($entityInsertHandler)) {
+			throw new \InvalidArgumentException("\$entityInsertHandler is not callable.");
 		}
-		$this->entityFactory = $entityFactory;
+		$this->entityInsertHandler = $entityInsertHandler;
 	}
 
 	/**
 	 * @return callback
-	 * @throws \InvalidStateException when self::$entityFactory not set
+	 * @throws \InvalidStateException when self::$entityInsertHandler not set
 	 */
-	public function getEntityFactory() {
-		if (!isset($this->entityFactory)) {
-			throw new \InvalidStateException( __CLASS__ . "::\$entityFactory is not set.");
+	public function getEntityInsertHandler() {
+		if (!isset($this->entityInsertHandler)) {
+			throw new \InvalidStateException( __CLASS__ . "::\$entityInsertHandler is not set.");
 		}
-		return $this->entityFactory;
+		return $this->entityInsertHandler;
 	}
 
 	/**
-	 * @param callback $entityFactory 
+	 * @param callback $entityUpdateHandler
 	 */
 	public function setEntityUpdateHandler($entityUpdateHandler) {
 		if (!is_callable($entityUpdateHandler)) {
-			throw new \InvalidArgumentException("EntityUpdateHandler is not callable.");
+			throw new \InvalidArgumentException("\$entityUpdateHandler is not callable.");
 		}
 		$this->entityUpdateHandler = $entityUpdateHandler;
 	}
@@ -56,6 +56,10 @@ class DoctrineEditableQueryBuilderModel extends DoctrineQueryBuilderModel implem
 			throw new \InvalidStateException(__CLASS__ . "::\$entityUpdateHandler is not set.");
 		}
 		return $this->entityUpdateHandler;
+	}
+	
+	public function getEntityManager(){
+		return $this->qb->getEntityManager();
 	}
 
 	/**
@@ -110,8 +114,8 @@ class DoctrineEditableQueryBuilderModel extends DoctrineQueryBuilderModel implem
 	 * @param array $rawValues
 	 */
 	public function addRow($rawValues) {
-		$factory = $this->getEntityFactory();
-		$entity = $factory($rawValues);
+		$handler = $this->getEntityInsertHandler();
+		$entity = $handler($rawValues);
 		
 		$this->qb->getEntityManager()->persist($entity);
 		$this->qb->getEntityManager()->flush();
