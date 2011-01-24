@@ -10,19 +10,28 @@ use \Nette\Application\AppForm;
  * Editable Grid with ADD, EDIT and REMOVE actions.
  */
 class EditableGrid extends Grid {
+	
+	const MESSAGE_ADD = "::add::";
+	const MESSAGE_EDIT = "::edit::";	
 
 	/** @var type IEditableModel */
 	protected $model;
+	
 	/** @var string Class used as default when creting edit/add form */
 	private $editControlClass = "\Nette\Forms\TextInput";
+	
 	private $formFilter = array(__CLASS__, '_bracket');
+	
 	private $defaultValueFilter = array(__CLASS__, '_bracket');
+	
 	/** @var string FlashMessage show after row created */
-	private $insertedMessage = "Row was created successfully.";
+	private static $insertedMessage = "Row was created successfully.";
+	
 	/** @var string FlashMessage show after row updated */
-	private $editedMessage = "Row updated.";
+	private static $editedMessage = "Row updated.";
+	
 	/** @var string FlashMessage show after row removed */
-	private $removedMessage = "Row was removed successfully.";
+	private static $removedMessage = "Row was removed successfully.";
 
 	static function _bracket($v) {
 		return $v;
@@ -34,55 +43,74 @@ class EditableGrid extends Grid {
 	 */
 	public function __construct(\Nette\IComponentContainer $parent = null, $name = null) {
 		parent::__construct($parent, $name);
-		Column::extensionMethod("setEditable", callback($this, "setEditable"));
-		Column::extensionMethod("getEditable", callback($this, "getEditable"));
+
+		static $extended = false;
+		if (!$extended) {
+			Column::extensionMethod("setEditable", callback($this, "setEditable"));
+			Column::extensionMethod("getEditable", callback($this, "getEditable"));
+			Column::extensionMethod("setEditableText", callback($this, "setEditableText"));
+			Column::extensionMethod("setEditableTextArea", callback($this, "setEditableTextArea"));
+			Column::extensionMethod("setEditableSelect", callback($this, "setEditableSelect"));
+			Column::extensionMethod("setEditableRadioList", callback($this, "setEditableRadioList"));
+			Column::extensionMethod("setEditableCheckbox", callback($this, "setEditableCheckbox"));
+			
+			
+			Column::extensionMethod("setAddable", callback($this, "setAddable"));
+			Column::extensionMethod("getAddable", callback($this, "getAddable"));
+			Column::extensionMethod("setAddableText", callback($this, "setAddableText"));
+			Column::extensionMethod("setAddableTextArea", callback($this, "setAddableTextArea"));
+			Column::extensionMethod("setAddableSelect", callback($this, "setAddableSelect"));
+			Column::extensionMethod("setAddableRadioList", callback($this, "setAddableRadioList"));
+			Column::extensionMethod("setAddableCheckbox", callback($this, "setAddableCheckbox"));
+			$extended = true;
+		}
 	}
 
 	/*	 * *************** Messages ****** */
 
 	/**
-	 * @param string $message
+	 * @param string|NULL $message
 	 * @return EditableGrid 
 	 */
 	public function setInsertedMessage($message) {
-		$this->insertedMessage = (string) $message;
+		self::$insertedMessage = $message;
 		return $this;
 	}
 
 	/**
-	 * @param string $message
+	 * @param string|NULL $message
 	 * @return EditableGrid 
 	 */
 	public function setEditedMessage($message) {
-		$this->editedMessage = (string) $message;
+		self::$editedMessage = $message;
 		return $this;
 	}
 
 	/**
-	 * @param string $message
+	 * @param string|NULL $message
 	 * @return EditableGrid 
 	 */
 	public function setRemovedMessage($message) {
-		$this->removedMessage = (string) $message;
+		self::$removedMessage = $message;
 		return $this;
 	}
 
 	/** @return string */
 	public function getInsertedMessage() {
-		return $this->insertedMessage;
+		return self::$insertedMessage;
 	}
 
 	/** @return string */
 	public function getEditedMessage() {
-		return $this->editedMessage;
+		return self::$editedMessage;
 	}
 
 	/** @return string */
 	public function getRemovedMessage() {
-		return $this->removedMessage;
+		return self::$removedMessage;
 	}
 
-	/** filtering */
+	/*	 * *************** Filters ****** */
 
 	/**
 	 * @param callback $filter
@@ -102,7 +130,7 @@ class EditableGrid extends Grid {
 		return $this;
 	}
 
-	/** model */
+	/*	 * *************** Model ****** */
 
 	/**
 	 * @param IModel $model
@@ -115,11 +143,11 @@ class EditableGrid extends Grid {
 		return parent::setModel($model);
 	}
 
-	/** buttons */
+	/*	 * *************** Buttons ****** */
 
 	/**
 	 * @param string $name
-	 * @param string $label
+	 * @param string|NULL $label
 	 * @param array $options
 	 * @return WindowButton
 	 * @throws \InvalidArgumentException
@@ -128,11 +156,10 @@ class EditableGrid extends Grid {
 		if (isset($options["handler"])) {
 			throw new \InvalidArgumentException(__CLASS__ . ":" . __METHOD__ . " \$options['handler'] is reserved.");
 		}
-
+	
 		$grid = $this;
 		$options["handler"] = function () use ($grid) {
-			
-				$grid["editForm"]->render();
+				$grid["addForm"]->render();
 			};
 
 		return $this->addToolbarWindowButton($name, $label, $options);
@@ -140,7 +167,7 @@ class EditableGrid extends Grid {
 
 	/**
 	 * @param string $name
-	 * @param string $label
+	 * @param string|NULL $label
 	 * @param array $options
 	 * @return WindowButton
 	 * @throws \InvalidArgumentException
@@ -158,7 +185,9 @@ class EditableGrid extends Grid {
 				$grid["editForm"]->render();
 			};
 
-		$this->setEditedMessage($options["editedMessage"]);
+		if(isset($options["editedMessage"])){
+			$this->setEditedMessage($options["editedMessage"]);
+		}
 		//remove editable-only options
 		unset($options["editedMessage"]);
 
@@ -167,7 +196,7 @@ class EditableGrid extends Grid {
 
 	/**
 	 * @param string $name
-	 * @param string $label
+	 * @param string|NULL $label
 	 * @param array $options
 	 * @return Button
 	 * @throws \InvalidArgumentException
@@ -179,44 +208,52 @@ class EditableGrid extends Grid {
 
 		$grid = $this;
 		$model = $this->model;
-		$removedMessage = $this->removedMessage;
-		$options["handler"] = function ($id) use ($grid, $model, $removedMessage) {
+		$options["handler"] = function ($id) use ($grid, $model) {
 				$model->removeRow($id);
-				$grid->flashMessage($removedMessage);
+				$grid->flashMessage($grid->getRemovedMessage());
 			};
 
 		return $this->addButton($name, $label, $options);
 	}
 
-	/** handlers */
-	private function createSubmitHandler($message = NULL) {
+	/*	 * *************** Handlers ****** */
+
+	/**
+	 * @param string $message
+	 * @param bool $insert
+	 * @return \Closure 
+	 */
+	private function createSubmitHandler($messageFlag, $insert = false) {
 		$grid = $this;
 		$model = $this->model;
 		$filter = $grid->formFilter;
-		return function ($form) use ($grid, $model, $message, $filter) {
+		return function ($form) use ($grid, $model, $filter, $messageFlag, $insert) {
 			$vals = $form->values;
 
 			$rawData = call_user_func($filter, $form->values, $form);
-			if ($rawData[$grid->getModel()->getPrimaryKey()] === NULL ) {
+			
+			if ($insert === true) {
 				$model->addRow($rawData);
 			} else {
 				unset($rawData[$grid->getModel()->getPrimaryKey()]);
 				$model->updateRow($vals[$grid->getModel()->getPrimaryKey()], $rawData);
 			}
 
-			if ($message !== NULL) {
+			switch($messageFlag){
+				case EditableGrid::MESSAGE_ADD: $message = $grid->getInsertedMessage();
+					break;
+				case EditableGrid::MESSAGE_EDIT: $message = $grid->getEditedMessage();
+					break;
+				default: throw new \InvalidArgumentException("Invalid message flag.");
+			}
+			if($message !== NULL){
 				$grid->flashMessage($message);
 			}
+			
 			$grid->redirect("this");
 		};
 	}
 
-	/*
-	  protected function createBaseForm($name){
-	  $form = new AppForm($this, $name);
-	  $form->addProtection();
-	  $this->editableForm = $form;
-	  } */
 	/*
 	  protected function createComponentAddForm($name){
 	  $this->createBaseForm($name);
@@ -224,14 +261,31 @@ class EditableGrid extends Grid {
 	  $this->editableForm->onSubmit[] = $this->createSubmitHandler(true, $this->insertedMessage);
 	  } */
 
+	/*	 * *************** Factory ****** */
+
+	/**
+	 * @param string $name 
+	 */
 	protected function createComponentEditForm($name) {
 		$form = new AppForm($this, $name);
 		$form->addProtection();
 
 		$form->addHidden($this->getModel()->getPrimaryKey());
 
-		$form->onSubmit[] = $this->createSubmitHandler(($this->editedMessage ? : NULL));
+		$form->onSubmit[] = $this->createSubmitHandler(self::MESSAGE_EDIT);
 	}
+	
+	/**
+	 * @param string $name 
+	 */
+	protected function createComponentAddForm($name) {
+		$form = new AppForm($this, $name);
+		$form->addProtection();
+		
+		$form->onSubmit[] = $this->createSubmitHandler(self::MESSAGE_ADD, true);
+	}
+	
+	/*	 * *************** Aliases ****** */
 
 	/**
 	 * @return AppForm 
@@ -239,35 +293,161 @@ class EditableGrid extends Grid {
 	public function getEditableForm() {
 		return $this["editForm"];
 	}
+	
+	/**
+	 * @return AppForm 
+	 */
+	public function getAddableForm() {
+		return $this["addForm"];
+	}
 
 	/** extending methods */
 
 	/**
 	 * @param Column $column
-	 * @param bool|string $controlClass bool or class of component, default \Nette\Forms\TextInput
-	 * @return \Nette\Forms\IFormControl 
+	 * @param bool $enable
+	 * @return \Nette\Forms\TextInput|NULL
 	 */
-	public function setEditable(Column $column, $controlClass = true) {
-		if ($controlClass === true) {
-			$controlClass = $this->editControlClass;
+	public function setEditable(Column $column, $enable = true) {
+		if($enable === false){
+			unset($this->getEditableForm()->{$column->getName()});
+			return;
 		}
-		if (class_exists($controlClass) && is_subclass_of($controlClass, '\Nette\Forms\IFormControl')) {
-			$control = new $controlClass($column->getName(), $column->getLabel());
-			$this->getEditableForm()->addComponent($control, $column->getName());
-			return $this->getEditableForm()->getComponent($column->getName());
-		} elseif ($controlClass === false) {
-			$this->getEditableForm()->removeComponent($column->getName());
-		} else {
-			throw new \InvalidArgumentException("No valid editable control");
-		}
+		
+		return  $this->setEditableText($column);
 	}
 	
 	/**
 	 * @param Column $column
+	 * @param string|NULL $label
+	 * @param int $cols
+	 * @param int $maxLength
+	 * @return \Nette\Forms\TextInput
+	 */
+	public function setEditableText(Column $column, $label = NULL, $cols = NULL, $maxLength = NULL) {
+		return $this->getEditableForm()->addText($column->getName(), ($label ?: $column->getLabel()), $cols, $maxLength);
+	}
+	
+	/**
+	 * @param Column $column
+	 * @param string|NULL $label
+	 * @param array $items
+	 * @return \Nette\Forms\SelectBox
+	 */
+	public function setEditableSelect(Column $column, $label = NULL, array $items = NULL) {
+		return $this->getEditableForm()->addSelect($column->getName(), ($label ?: $column->getLabel()), $items);
+	}
+	
+	/**
+	 * @param Column $column
+	 * @param string|NULL $caption
+	 * @return \Nette\Forms\Checkbox
+	 */
+	public function setEditableCheckbox(Column $column, $caption = NULL) {
+		return $this->getEditableForm()->addCheckbox($column->getName(), ($caption ?: $column->getLabel()));
+	}
+	
+	/**
+	 * @param Column $column
+	 * @param string|NULL $label
+	 * @param array $items
+	 * @return \Nette\Forms\RadioList
+	 */
+	public function setEditableRadioList(Column $column, $label = NULL, array $items = NULL) {
+		return $this->getEditableForm()->addRadioList($column->getName(), ($label ?: $column->getLabel()), $items);
+	}
+	
+	/**
+	 * @param Column $column
+	 * @param string|NULL $label
+	 * @param int $cols
+	 * @param int $rows
+	 * @return \Nette\Forms\TextArea
+	 */
+	public function setEditableTextArea(Column $column, $label = NULL,  $cols = 40, $rows = 10) {
+		return $this->getEditableForm()->addTextArea($column->getName(), ($label ?: $column->getLabel()), $cols, $rows);
+	}
+	
+	/**
+	 * @param Column $column
+	 * @param bool $enable
+	 * @return \Nette\Forms\TextInput|NULL
+	 */
+	public function setAddable(Column $column, $enable = true) {
+		if($enable === false){
+			unset($this->getEditableForm()->{$column->getName()});
+			return;
+		}
+		
+		return  $this->setAddableText($column);
+	}
+	
+	/**
+	 * @param Column $column
+	 * @param string|NULL $label
+	 * @param int $cols
+	 * @param int $maxLength
+	 * @return \Nette\Forms\TextInput
+	 */
+	public function setAddableText(Column $column, $label = NULL, $cols = NULL, $maxLength = NULL) {
+		return $this->getAddableForm()->addText($column->getName(), ($label ?: $column->getLabel()), $cols, $maxLength);
+	}
+	
+	/**
+	 * @param Column $column
+	 * @param string|NULL $label
+	 * @param array $items
+	 * @return \Nette\Forms\SelectBox
+	 */
+	public function setAddableSelect(Column $column, $label = NULL, array $items = NULL) {
+		return $this->getAddableForm()->addSelect($column->getName(), ($label ?: $column->getLabel()), $items);
+	}
+	
+	/**
+	 * @param Column $column
+	 * @param string|NULL $caption
+	 * @return \Nette\Forms\Checkbox
+	 */
+	public function setAddableCheckbox(Column $column, $caption = NULL) {
+		return $this->getAddableForm()->addCheckbox($column->getName(), ($caption ?: $column->getLabel()));
+	}
+	
+	/**
+	 * @param Column $column
+	 * @param string|NULL $label
+	 * @param array $items
+	 * @return \Nette\Forms\RadioList
+	 */
+	public function setAddableRadioList(Column $column, $label = NULL, array $items = NULL) {
+		return $this->getAddableForm()->addRadioList($column->getName(), ($label ?: $column->getLabel()), $items);
+	}
+	
+	/**
+	 * @param Column $column
+	 * @param string|NULL $label
+	 * @param int $cols
+	 * @param int $rows
+	 * @return \Nette\Forms\TextArea
+	 */
+	public function setAddableTextArea(Column $column, $label = NULL,  $cols = 40, $rows = 10) {
+		return $this->getAddableForm()->addTextArea($column->getName(), ($label ?: $column->getLabel()), $cols, $rows);
+	}
+
+	/**
+	 * @param Column $column
 	 * @return \Nette\Forms\IFormControl 
 	 */
-	public function getEditable(Column $column){
+	public function getEditable(Column $column) {
 		return $this->getEditableForm()->getComponent($column->getName());
 	}
 	
+	/**
+	 *
+	 * @param Column $column
+	 * @return \Nette\Forms\IFormControl 
+	 */
+	public function getAddable(Column $column) {
+		return $this->getEditableForm()->getComponent($column->getName());
+	}
+
 }
