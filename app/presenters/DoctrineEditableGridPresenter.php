@@ -24,18 +24,18 @@ class DoctrineEditableGridPresenter extends BasePresenter {
 
 		$grid->addColumn("username", "Username")
 			->setSortable(true)
-			->setEditableText();
+			->setEditableText(); //create text input in editForm and use column name/label as component name/label
 		
 		$grid->getColumn("username")
-			->setAddable();
+			->setAddableText(); //create text input in addForm and use column name/label as component name/label
 		
 
 		$grid->addColumn("name", "Name")
 			->setSortable(true)
-			->setEditableText();
+			->setEditable(); //shortcut for ->setEditableText(), use only one argument (bool) $enable 
 		
 		$grid->getColumn("name")
-			->setAddableText();
+			->setAddable(); //shortcut for ->setAddableText(), use only one argument (bool) $enable 
 
 		
 		$grid->addColumn("surname", "Surname")
@@ -57,20 +57,20 @@ class DoctrineEditableGridPresenter extends BasePresenter {
 
 			
 		$grid->getColumn("mail")
-			->getEditable()
+			->getEditable() //return editForm component for this column
 				->addRule(Form::EMAIL, "E-mail is not valid.");
 		
 		$grid->getColumn("mail")
-			->getAddable()
+			->getAddable() //return addForm component for this column
 				->addRule(Form::EMAIL, "E-mail is not valid.");
 
 		
 		$grid->addColumn("active", "Active")
 			->setSortable(true)
-			->setEditableCheckbox();
+			->setEditableCheckbox(); //create \Nette\Forms\Checkbox component in editForm
 			
 		$grid->getColumn("active")
-			->setAddableCheckbox();
+			->setAddableCheckbox(); //create \Nette\Forms\Checkbox component in addForm
 		
 		
 		
@@ -104,11 +104,11 @@ class DoctrineEditableGridPresenter extends BasePresenter {
 		
 		//buttons for editabel forms
 		
-		$grid->getEditableForm()
+		$grid->getEditableForm() //return editForm
 			->addSubmit("save", "Uložit");
 		
 		
-		$grid->getAddableForm()
+		$grid->getAddableForm() //return addForm
 			->addPassword("password", "Heslo")
 				->getParent()
 			->addSubmit("add", "Přidat");
